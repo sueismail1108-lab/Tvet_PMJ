@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TVET Dashboard</title>
+<!-- QR Code library (pure JS, no external images) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  background: #f0f2f5;
+  color: #1f2328;
+  min-height: 100vh;
+  padding: 0 0 60px;
+}
+.container { max-width: 760px; margin: 0 auto; padding: 32px 16px; }
+
+/* ═══════════════════════════════════════════════
+   TOP NAVBAR
+═══════════════════════════════════════════════ */
+.navbar {
+  background: #1e293b;
+  border-bottom: 1px solid #0f172a;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: stretch;
+  min-height: 56px;
+}
+
+/* Brand */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+  border-right: 1px solid #334155;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.navbar-brand .brand-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg,#3b82d4,#7c5cd8);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.navbar-brand .brand-text h1 {
+  font-size: 14px; font-weight: 700; color: #f1f5f9; line-height: 1.2;
+}
+.navbar-brand .brand-text p  {
+  font-size: 10px; color: #94a3b8; line-height: 1;
+}
+
+/* Nav tabs (centre) */
+.navbar-tabs {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.navbar-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tab {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #94a3b8;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: color .15s, background .15s, border-color .15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.nav-tab:hover  { color: #e2e8f0; background: rgba(255,255,255,.05); }
+.nav-tab.active { color: #fff; border-bottom-color: #3b82d4; background: rgba(59,130,212,.12); }
+
+/* Actions (right) */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  border-left: 1px solid #334155;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s, background .15s;
+  display: flex; align-items: center; gap: 4px;
+}
+.nav-btn:active { opacity: .75; }
+.nav-btn-ghost  { background: transparent; border-color: #334155; color: #cbd5e1; }
+.nav-btn-ghost:hover { background: #334155; color: #f1f5f9; border-color: #475569; }
+.nav-btn-purple { background: #7c5cd8; border-color: #7c5cd8; color: #fff; }
+.nav-btn-purple:hover { background: #6d48c7; }
+.nav-btn-danger { background: transparent; border-color: #7f1d1d; color: #fca5a5; }
+.nav-btn-danger:hover { background: #450a0a; border-color: #991b1b; }
+
+/* ── keep old .btn classes working for any lingering uses ── */
+.btn { font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 6px; border: 1px solid; cursor: pointer; white-space: nowrap; transition: opacity .15s; }
+.btn:active { opacity: .75; }
+.btn-ghost    { background: #fff; border-color: #e5e7eb; color: #1f2328; }
+.btn-danger   { background: #fff; border-color: #fca5a5; color: #dc2626; }
+.btn-primary  { background: #3b82d4; border-color: #3b82d4; color: #fff; }
+.btn-pdf      { background: #7c5cd8; border-color: #7c5cd8; color: #fff; }
+
+/* ── page header below navbar ── */
+.page-header {
+  padding: 20px 0 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.page-header h2 { font-size: 18px; font-weight: 700; }
+.page-header p  { font-size: 12.5px; color: #57606a; margin-top: 2px; }
+
+/* ── Language toggle pill ── */
+.lang-toggle {
+  display: flex;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.lang-btn {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  letter-spacing: .4px;
+}
+.lang-btn.active { background: #3b82d4; color: #fff; }
+.lang-btn:not(.active):hover { background: #1e3a5f; color: #e2e8f0; }
+
+/* ── WhatsApp & action button helpers ── */
+.btn-wa       { background: #25d366; border-color: #25d366; color: #fff; font-size: 11px; padding: 4px 10px; border-radius: 6px; font-family: inherit; font-weight: 600; cursor: pointer; }
+.btn-wa:hover { background: #1ebe57; }
+
+/* ═══════════════════════════════════════════════
+   BAR 6 — ALERT / KPI TICKER BAR
+═══════════════════════════════════════════════ */
+#ticker-bar {
+  background: linear-gradient(90deg, #7f1d1d 0%, #991b1b 100%);
+  color: #fecaca;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 0;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
+  border-bottom: 1px solid #450a0a;
+  display: none; /* shown when urgent tasks exist */
+}
+#ticker-bar.has-alerts { display: block; }
+.ticker-track {
+  display: inline-block;
+  animation: ticker-scroll 28s linear infinite;
+  padding-left: 100%;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+.ticker-item { margin-right: 60px; }
+.ticker-kpi-strip {
+  display: flex;
+  gap: 0;
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 16px;
+}
+.ticker-kpi-strip::-webkit-scrollbar { display: none; }
+.ticker-kpi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px 6px 0;
+  border-right: 1px solid #1e293b;
+  margin-right: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ticker-kpi:last-child { border-right: none; }
+.ticker-kpi .tk-label { font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.ticker-kpi .tk-value { font-size: 15px; font-weight: 800; color: #f1f5f9; }
+.ticker-kpi .tk-delta { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
+.tk-up   { background: #064e3b; color: #6ee7b7; }
+.tk-down { background: #450a0a; color: #fca5a5; }
+.tk-neu  { background: #1e293b; color: #94a3b8; }
+
+/* ═══════════════════════════════════════════════
+   BAR 4 — TAB & FILTER BAR
+═══════════════════════════════════════════════ */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  padding: 0 0 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-pill {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #57606a;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+  white-space: nowrap;
+}
+.filter-pill:hover  { background: #f0f2f5; border-color: #d1d5db; }
+.filter-pill.active { background: #1e293b; color: #fff; border-color: #1e293b; }
+.filter-pill.pill-urgent.active { background: #dc2626; border-color: #dc2626; }
+.filter-pill.pill-done.active   { background: #059669; border-color: #059669; }
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255,255,255,.25);
+  margin-left: 4px;
+}
+.filter-pill:not(.active) .filter-count { background: #e5e7eb; color: #57606a; }
+
+/* ═══════════════════════════════════════════════
+   BAR 7 — PROGRESS & STATUS BAR
+═══════════════════════════════════════════════ */
+.progress-bar-section {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  display: none;
+}
+.progress-bar-section.show { display: block; }
+.pb-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+.pb-title   { font-size: 12px; font-weight: 700; color: #1f2328; }
+.pb-percent { font-size: 20px; font-weight: 800; color: #3b82d4; }
+.pb-track {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.pb-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #3b82d4, #7c5cd8);
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+.pb-steps { display: flex; gap: 12px; flex-wrap: wrap; }
+.pb-step  { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #57606a; }
+.pb-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════
+   BAR 8 — BOTTOM ACTION DOCK
+═══════════════════════════════════════════════ */
+.bottom-dock {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #1e293b;
+  border-top: 1px solid #334155;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 200;
+  flex-wrap: wrap;
+}
+.dock-btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background .15s, opacity .15s;
+}
+.dock-btn:active { opacity: .75; }
+.dock-save   { background: #3b82d4; border-color: #3b82d4; color: #fff; }
+.dock-save:hover { background: #2563eb; }
+.dock-pdf    { background: #7c5cd8; border-color: #7c5cd8; color: #fff; }
+.dock-pdf:hover  { background: #6d48c7; }
+.dock-reset  { background: transparent; border-color: #475569; color: #cbd5e1; }
+.dock-reset:hover { background: #334155; }
+.dock-divider { width: 1px; height: 24px; background: #334155; flex-shrink: 0; }
+.dock-status { font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 5px; }
+.dock-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #059669; animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+/* body padding for dock */
+body { padding-bottom: 70px; }
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 22px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1f2328; color: #fff; font-size: 12.5px; font-weight: 500;
+  padding: 8px 18px; border-radius: 20px; opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none; z-index: 9999; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ═══════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════ */
+.cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px 18px 16px; }
+.card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: #57606a; margin-bottom: 10px; }
+.card-value { font-size: 34px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+.card-sub   { font-size: 12px; color: #57606a; }
+.card-icon  { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.icon-blue  { background: #dbeafe; }
+.icon-amber { background: #fef3c7; }
+.icon-green { background: #d1fae5; }
+.card-value.blue   { color: #2563eb; }
+.card-value.amber  { color: #d97706; }
+
+/* editable fields */
+[contenteditable="true"] { outline: none; border-radius: 4px; cursor: text; min-width: 20px; transition: background .15s; }
+[contenteditable="true"]:hover { background: #f0f2f5; }
+[contenteditable="true"]:focus { background: #e8f0fe; box-shadow: 0 0 0 2px #3b82d480; }
+
+/* ═══════════════════════════════════════════════
+   EXECUTIVE VIEW – KPI / AI / ROI extras
+═══════════════════════════════════════════════ */
+.exec-section { display: none; }
+.exec-section.active { display: block; margin-bottom: 24px; }
+
+.kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 16px; }
+.kpi-card {
+  background: linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);
+  color: #fff; border-radius: 10px; padding: 18px 16px;
+}
+.kpi-card .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; opacity: .75; margin-bottom: 6px; }
+.kpi-card .kpi-value { font-size: 28px; font-weight: 800; line-height: 1; }
+.kpi-card .kpi-sub   { font-size: 11px; opacity: .8; margin-top: 4px; }
+
+.ai-box {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px 20px; margin-bottom: 16px;
+}
+.ai-box h3 { font-size: 13px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.ai-badge { font-size: 10px; font-weight: 700; background: #7c5cd8; color: #fff; padding: 2px 7px; border-radius: 10px; }
+.ai-item { font-size: 12.5px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; color: #1f2328; }
+.ai-item:last-child { border-bottom: none; }
+.ai-item strong { color: #2563eb; }
+
+.roi-box {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px 20px;
+}
+.roi-box h3 { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+.roi-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.roi-table th { text-align: left; font-weight: 600; color: #57606a; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; padding: 4px 0 8px; border-bottom: 1px solid #e5e7eb; }
+.roi-table td { padding: 7px 0; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+.roi-table tr:last-child td { border-bottom: none; }
+.roi-positive { color: #059669; font-weight: 700; }
+.roi-negative { color: #dc2626; font-weight: 700; }
+
+/* ═══════════════════════════════════════════════
+   WORKSHOP STATUS
+═══════════════════════════════════════════════ */
+.status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.dot          { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.status-open  { background: #d1fae5; color: #065f46; }
+.dot-open     { background: #059669; }
+.status-maint { background: #fef3c7; color: #92400e; }
+.dot-maint    { background: #d97706; }
+.status-closed{ background: #fee2e2; color: #991b1b; }
+.dot-closed   { background: #dc2626; }
+.workshop-count { font-size: 22px; line-height: 1.3; font-weight: 700; margin-bottom: 10px; color: #059669; }
+.workshop-list  { display: flex; flex-direction: column; gap: 5px; }
+
+/* ═══════════════════════════════════════════════
+   SECTION
+═══════════════════════════════════════════════ */
+.section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px 20px 8px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.section-title  { font-size: 14px; font-weight: 700; }
+.badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: #f7f8fa; border: 1px solid #e5e7eb; color: #57606a; }
+
+/* ═══════════════════════════════════════════════
+   CHECKLIST
+═══════════════════════════════════════════════ */
+.checklist { list-style: none; }
+.checklist li {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+  font-size: 13.5px; line-height: 1.5;
+}
+.checklist li:last-child { border-bottom: none; padding-bottom: 4px; }
+.checklist input[type="checkbox"] { width: 16px; height: 16px; margin-top: 2px; accent-color: #3b82d4; flex-shrink: 0; cursor: pointer; }
+.check-label { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.check-text  { font-weight: 500; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.check-text.done { text-decoration: line-through; color: #8c959f; }
+.check-meta  { font-size: 11px; color: #57606a; }
+.check-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+/* urgent row highlight */
+.task-urgent { background: #fff8f0; border-radius: 8px; }
+.task-urgent .check-text { color: #b45309; }
+
+.tag      { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+.tag-eng  { background: #dbeafe; color: #1d4ed8; }
+.tag-weld { background: #fce7f3; color: #9d174d; }
+.tag-it   { background: #d1fae5; color: #065f46; }
+.tag-auto { background: #fef3c7; color: #92400e; }
+.tag-urgent { background: #fee2e2; color: #dc2626; }
+
+.btn-remove {
+  background: none; border: none; cursor: pointer;
+  color: #c0c4cb; font-size: 18px; line-height: 1; padding: 0 2px; flex-shrink: 0;
+  transition: color .15s;
+}
+.btn-remove:hover { color: #dc2626; }
+
+/* ── Add-item row ── */
+.add-row { display: flex; gap: 8px; align-items: center; padding: 12px 0 8px; flex-wrap: wrap; }
+.add-row input, .add-row select {
+  font-family: inherit; font-size: 12.5px; padding: 5px 9px;
+  border: 1px solid #e5e7eb; border-radius: 6px; outline: none; transition: border-color .15s;
+}
+.add-row input:focus, .add-row select:focus { border-color: #3b82d4; }
+.add-row input { flex: 1; min-width: 130px; }
+.btn-add { background: #3b82d4; color: #fff; border: none; border-radius: 6px; padding: 6px 13px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-add:hover { background: #2563eb; }
+
+/* ═══════════════════════════════════════════════
+   ALERTS PANEL (Ops View only)
+═══════════════════════════════════════════════ */
+.alerts-panel { background: #fff; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; }
+.alerts-panel h3 { font-size: 13px; font-weight: 700; color: #dc2626; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.alert-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid #fee2e2; font-size: 13px; }
+.alert-item:last-child { border-bottom: none; }
+.alert-text strong { display: block; font-weight: 600; color: #1f2328; }
+.alert-text span   { font-size: 11px; color: #57606a; }
+
+/* ═══════════════════════════════════════════════
+   MODAL OVERLAY
+═══════════════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 500;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 14px; padding: 28px 28px 24px;
+  max-width: 440px; width: 92%; max-height: 90vh; overflow-y: auto;
+  position: relative;
+}
+.modal h2 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+.modal-close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; font-size: 22px; cursor: pointer; color: #57606a; line-height: 1;
+}
+.modal-close:hover { color: #dc2626; }
+
+/* ── QR modal ── */
+#qr-canvas { display: flex; justify-content: center; margin: 16px 0; }
+#qr-url    { font-size: 11px; color: #57606a; word-break: break-all; text-align: center; }
+
+/* ═══════════════════════════════════════════════
+   FAQ CHATBOT
+═══════════════════════════════════════════════ */
+#chatbot-fab {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #3b82d4; border: none; cursor: pointer;
+  color: #fff; font-size: 24px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(59,130,212,.5); z-index: 400; transition: background .15s;
+}
+#chatbot-fab:hover { background: #2563eb; }
+
+#chatbot-window {
+  display: none; position: fixed; bottom: 90px; right: 20px;
+  width: 340px; max-height: 500px; border-radius: 14px;
+  background: #fff; border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 32px rgba(0,0,0,.15); z-index: 400;
+  flex-direction: column; overflow: hidden;
+}
+#chatbot-window.open { display: flex; }
+
+.chat-header {
+  background: #3b82d4; color: #fff; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chat-header span { font-size: 13px; font-weight: 700; }
+.chat-header-close { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; line-height: 1; }
+
+.chat-body { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+.chat-msg { max-width: 86%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; line-height: 1.5; }
+.chat-msg.bot  { background: #f0f2f5; color: #1f2328; align-self: flex-start; border-bottom-left-radius: 4px; }
+.chat-msg.user { background: #3b82d4; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+
+.chat-suggestions { padding: 8px 14px; display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid #f3f4f6; }
+.chat-chip {
+  font-family: inherit; font-size: 11px; font-weight: 600; padding: 4px 10px;
+  border-radius: 20px; background: #f0f2f5; border: 1px solid #e5e7eb;
+  cursor: pointer; color: #1f2328; transition: background .12s;
+}
+.chat-chip:hover { background: #dbeafe; border-color: #3b82d4; color: #2563eb; }
+
+.chat-input-row { display: flex; border-top: 1px solid #e5e7eb; }
+.chat-input-row input {
+  flex: 1; font-family: inherit; font-size: 12.5px;
+  padding: 10px 12px; border: none; outline: none;
+}
+.chat-send-btn {
+  background: #3b82d4; color: #fff; border: none; padding: 0 14px;
+  font-size: 16px; cursor: pointer; transition: background .12s;
+}
+.chat-send-btn:hover { background: #2563eb; }
+
+/* ═══════════════════════════════════════════════
+   PRINT STYLES
+═══════════════════════════════════════════════ */
+@media print {
+  body { background: #fff !important; padding: 0 !important; }
+  .view-bar, .toolbar, .add-row, .btn-remove, .btn-wa,
+  #chatbot-fab, #chatbot-window, #toast, .modal-overlay,
+  .exec-section, .alerts-panel, .no-print { display: none !important; }
+  .container { padding: 0 !important; max-width: 100% !important; }
+  .cards { grid-template-columns: repeat(3,1fr) !important; }
+  .card, .section { break-inside: avoid; }
+
+  .print-header {
+    display: block !important;
+    border-bottom: 2px solid #1f2328;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+  .print-header h1 { font-size: 20px; font-weight: 800; }
+  .print-header p  { font-size: 12px; color: #57606a; margin-top: 2px; }
+  .print-header .print-meta { font-size: 11px; color: #57606a; margin-top: 6px; }
+
+  .print-sig {
+    display: block !important;
+    margin-top: 48px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+  }
+  .sig-row { display: flex; gap: 48px; margin-top: 24px; }
+  .sig-box { flex: 1; }
+  .sig-box .sig-line { border-bottom: 1px solid #1f2328; height: 40px; margin-bottom: 6px; }
+  .sig-box .sig-name { font-size: 11px; color: #57606a; }
+  .print-footer-note { font-size: 10px; color: #8c959f; margin-top: 24px; text-align: center; }
+}
+
+/* hide print-only elements on screen */
+.print-header, .print-sig { display: none; }
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+footer { text-align: center; margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #8c959f; }
+
+/* ═══════════════════════════════════════════════
+   AI INTELLIGENCE TAB
+═══════════════════════════════════════════════ */
+.ai-tab-section { display: none; }
+.ai-tab-section.active { display: block; }
+
+.ai-group-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: #57606a; margin: 0 0 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.ai-group-title::after {
+  content: ""; flex: 1; height: 1px; background: #e5e7eb;
+}
+.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+@media (max-width: 520px) { .ai-grid { grid-template-columns: 1fr; } }
+
+.ai-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.ai-card-head {
+  display: flex; align-items: center; gap: 9px;
+}
+.ai-card-icon {
+  width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+}
+.aic-blue   { background: #dbeafe; }
+.aic-amber  { background: #fef3c7; }
+.aic-green  { background: #d1fae5; }
+.aic-purple { background: #ede9fe; }
+.aic-red    { background: #fee2e2; }
+.aic-teal   { background: #ccfbf1; }
+.aic-rose   { background: #fce7f3; }
+.aic-indigo { background: #e0e7ff; }
+.aic-orange { background: #ffedd5; }
+.aic-lime   { background: #ecfccb; }
+.aic-sky    { background: #e0f2fe; }
+.aic-fuchsia{ background: #fdf4ff; }
+
+.ai-card-head-text h4 { font-size: 13px; font-weight: 700; }
+.ai-card-head-text p  { font-size: 11px; color: #57606a; margin-top: 1px; }
+
+.ai-controls { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.ai-controls label { font-size: 11.5px; color: #57606a; }
+.ai-controls input[type="range"] { flex: 1; min-width: 80px; accent-color: #3b82d4; }
+.ai-controls input[type="number"],
+.ai-controls select,
+.ai-controls input[type="text"] {
+  font-family: inherit; font-size: 12px; padding: 4px 8px;
+  border: 1px solid #e5e7eb; border-radius: 6px; outline: none;
+  transition: border-color .15s; width: auto;
+}
+.ai-controls input:focus, .ai-controls select:focus { border-color: #3b82d4; }
+.ai-controls input[type="number"] { width: 68px; }
+
+.ai-run-btn {
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
+  color: #fff; background: #3b82d4; transition: background .15s; white-space: nowrap;
+}
+.ai-run-btn:hover { background: #2563eb; }
+.ai-run-btn.purple { background: #7c5cd8; }
+.ai-run-btn.purple:hover { background: #6d48c7; }
+.ai-run-btn.green  { background: #059669; }
+.ai-run-btn.green:hover  { background: #047857; }
+
+.ai-result {
+  background: #f7f8fa; border-radius: 8px; padding: 10px 12px;
+  font-size: 12.5px; line-height: 1.7; color: #1f2328;
+  border-left: 3px solid #3b82d4; display: none;
+}
+.ai-result.show { display: block; }
+.ai-result.purple-border { border-left-color: #7c5cd8; }
+.ai-result.green-border  { border-left-color: #059669; }
+.ai-result.amber-border  { border-left-color: #d97706; }
+.ai-result.red-border    { border-left-color: #dc2626; }
+
+/* risk meter */
+.risk-meter { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.risk-bar-wrap { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+
+/* simulator chart */
+.sim-chart { display: flex; align-items: flex-end; gap: 4px; height: 60px; margin-top: 8px; }
+.sim-bar {
+  flex: 1; border-radius: 3px 3px 0 0;
+  background: #3b82d4; transition: height .4s;
+  position: relative;
+}
+.sim-bar:hover::after {
+  content: attr(data-val);
+  position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%);
+  background: #1f2328; color: #fff; font-size: 10px; padding: 2px 5px;
+  border-radius: 3px; white-space: nowrap; pointer-events: none;
+}
+.sim-labels { display: flex; gap: 4px; margin-top: 4px; }
+.sim-label  { flex: 1; text-align: center; font-size: 9px; color: #8c959f; }
+
+/* generator textarea */
+.ai-output-area {
+  width: 100%; min-height: 110px; font-family: inherit; font-size: 12px;
+  padding: 9px 11px; border: 1px solid #e5e7eb; border-radius: 7px;
+  resize: vertical; outline: none; color: #1f2328; background: #f7f8fa;
+  line-height: 1.6;
+}
+.ai-output-area:focus { border-color: #3b82d4; background: #fff; }
+
+.ai-copy-btn {
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 5px; border: 1px solid #e5e7eb;
+  cursor: pointer; background: #fff; color: #57606a; white-space: nowrap;
+}
+.ai-copy-btn:hover { background: #f0f2f5; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ TOP NAVBAR ═══════════════ -->
+<nav class="navbar no-print">
+  <!-- Brand -->
+  <div class="navbar-brand">
+    <div class="brand-icon">🎓</div>
+    <div class="brand-text">
+      <h1>TVET Dashboard</h1>
+      <p>MyKemahiran Portal</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="navbar-tabs">
+    <button class="nav-tab active" id="tab-ops"  onclick="switchView('ops')" data-i18n="tab.ops">⚙️ Operations</button>
+    <button class="nav-tab" id="tab-exec" onclick="switchView('exec')" data-i18n="tab.exec">🏛️ Executive</button>
+    <button class="nav-tab" id="tab-ai"   onclick="switchView('ai')"  data-i18n="tab.ai">🤖 AI Intelligence</button>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="navbar-actions">
+    <!-- BM/EN Language Toggle -->
+    <div class="lang-toggle no-print">
+      <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="lang-bm" onclick="setLang('bm')">BM</button>
+    </div>
+    <button class="nav-btn nav-btn-ghost no-print" id="qrBtn" data-i18n="nav.qr">📱 QR</button>
+    <button class="nav-btn nav-btn-purple no-print" id="pdfBtn" data-i18n="nav.pdf">🖨️ PDF</button>
+    <button class="nav-btn nav-btn-ghost no-print" id="saveBtn" data-i18n="nav.save">💾 Save</button>
+    <button class="nav-btn nav-btn-danger no-print" id="resetBtn" data-i18n="nav.reset">↺ Reset</button>
+  </div>
+</nav>
+
+<!-- ═══════════════ BAR 6: KPI STRIP + ALERT TICKER ═══════════════ -->
+<div class="ticker-kpi-strip no-print">
+  <div class="ticker-kpi">
+    <div>
+      <div class="tk-label" data-i18n="kpi.enrolRate">Enrollment Rate</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tk-value">94.2%</span>
+        <span class="tk-delta tk-up">↑ 3.1%</span>
+      </div>
+    </div>
+  </div>
+  <div class="ticker-kpi">
+    <div>
+      <div class="tk-label" data-i18n="kpi.gradEmp">Graduate Employment</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tk-value">87.5%</span>
+        <span class="tk-delta tk-up">↑ 2.5%</span>
+      </div>
+    </div>
+  </div>
+  <div class="ticker-kpi">
+    <div>
+      <div class="tk-label" data-i18n="kpi.budget">Budget Utilisation</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tk-value">72%</span>
+        <span class="tk-delta tk-neu">RM 2.16M</span>
+      </div>
+    </div>
+  </div>
+  <div class="ticker-kpi">
+    <div>
+      <div class="tk-label" data-i18n="card.students">Students</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tk-value" id="ticker-students">348</span>
+        <span class="tk-delta tk-up">↑ 12</span>
+      </div>
+    </div>
+  </div>
+  <div class="ticker-kpi">
+    <div>
+      <div class="tk-label" data-i18n="card.tasks">Tasks</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tk-value" id="ticker-tasks">24</span>
+        <span class="tk-delta tk-down" id="ticker-pending">16 pending</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="ticker-bar" class="no-print">
+  <div class="ticker-track" id="ticker-track"></div>
+</div>
+
+<!-- ═══════════════ PRINT-ONLY HEADER ═══════════════ -->
+<div class="print-header">
+  <h1>TVET Official Dashboard Report</h1>
+  <p>Technical &amp; Vocational Education and Training</p>
+  <p class="print-meta" id="print-date"></p>
+</div>
+
+<div class="container">
+
+  <!-- ── PAGE HEADER ── -->
+  <div class="page-header">
+    <div>
+      <h2 id="page-title" data-i18n="view.ops">Operations View</h2>
+      <p data-i18n="brand.sub">Technical &amp; Vocational Education and Training</p>
+    </div>
+    <div id="page-meta" style="font-size:11.5px;color:#57606a;"></div>
+  </div>
+
+  <!-- ── BAR 7: PROGRESS & STATUS BAR ── -->
+  <div class="progress-bar-section no-print show" id="progress-section">
+    <div class="pb-header">
+      <span class="pb-title" id="pb-title">📋 Task Completion Progress</span>
+      <span class="pb-percent" id="pb-percent">0%</span>
+    </div>
+    <div class="pb-track">
+      <div class="pb-fill" id="pb-fill" style="width:0%"></div>
+    </div>
+    <div class="pb-steps">
+      <div class="pb-step"><div class="pb-dot" style="background:#059669"></div><span id="pb-done-label">0 Completed</span></div>
+      <div class="pb-step"><div class="pb-dot" style="background:#d97706"></div><span id="pb-pending-label">0 Pending</span></div>
+      <div class="pb-step"><div class="pb-dot" style="background:#dc2626"></div><span id="pb-urgent-label">0 Urgent</span></div>
+    </div>
+  </div>
+
+  <!-- ── BAR 4: TAB & FILTER BAR ── -->
+  <div class="filter-bar no-print" id="filter-bar" style="display:none;">
+    <button class="filter-pill active" id="fpill-all"    onclick="setFilter('all')">
+      <span data-i18n="filter.all">All</span><span class="filter-count" id="fc-all">0</span>
+    </button>
+    <button class="filter-pill pill-urgent" id="fpill-urgent" onclick="setFilter('urgent')">
+      <span data-i18n="filter.urgent">🔴 Urgent</span><span class="filter-count" id="fc-urgent">0</span>
+    </button>
+    <button class="filter-pill" id="fpill-pending" onclick="setFilter('pending')">
+      <span data-i18n="filter.pending">⏳ Pending</span><span class="filter-count" id="fc-pending">0</span>
+    </button>
+    <button class="filter-pill pill-done" id="fpill-done" onclick="setFilter('done')">
+      <span data-i18n="filter.done">✅ Done</span><span class="filter-count" id="fc-done">0</span>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       EXECUTIVE VIEW SECTION
+  ══════════════════════════════════════════ -->
+  <div class="exec-section" id="exec-section">
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpi.enrolRate">Enrollment Rate</div>
+        <div class="kpi-value">94.2%</div>
+        <div class="kpi-sub" data-i18n="kpi.enrolRateSub">↑ 3.1% vs last quarter</div>
+      </div>
+      <div class="kpi-card" style="background:linear-gradient(135deg,#065f46,#059669)">
+        <div class="kpi-label" data-i18n="kpi.gradEmp">Graduate Employment</div>
+        <div class="kpi-value">87.5%</div>
+        <div class="kpi-sub" data-i18n="kpi.gradEmpSub">Target: 85% ✓</div>
+      </div>
+      <div class="kpi-card" style="background:linear-gradient(135deg,#6d28d9,#7c5cd8)">
+        <div class="kpi-label" data-i18n="kpi.budget">Budget Utilisation</div>
+        <div class="kpi-value">72%</div>
+        <div class="kpi-sub" data-i18n="kpi.budgetSub">RM 2.16M of RM 3M</div>
+      </div>
+    </div>
+
+    <!-- AI Forecast -->
+    <div class="ai-box">
+      <h3><span class="ai-badge" data-i18n="ai.badge">AI Forecast</span> <span data-i18n="ai.badgeTitle">Predictive Insights</span></h3>
+      <div class="ai-item" data-i18n="ai.f1">📈 <strong>Enrolment</strong> projected to reach <strong>410 students</strong> by end of Q3 2025 (+18% YoY)</div>
+      <div class="ai-item" data-i18n="ai.f2">⚠️ <strong>Auto Mech workshop</strong> maintenance cost likely to exceed budget by <strong>RM 8,400</strong> if not resolved within 14 days</div>
+      <div class="ai-item" data-i18n="ai.f3">🎓 <strong>3 students</strong> identified as at-risk of dropping — recommend counsellor intervention this week</div>
+      <div class="ai-item" data-i18n="ai.f4">🔧 <strong>ICT Lab</strong> equipment replacement recommended within 60 days based on usage patterns</div>
+      <div class="ai-item" data-i18n="ai.f5">📊 <strong>Welding programme</strong> has highest employer demand score (92/100) — recommend capacity expansion</div>
+    </div>
+
+    <!-- ROI Summary -->
+    <div class="roi-box">
+      <h3 data-i18n="roi.title">ROI Summary — Training Programmes</h3>
+      <table class="roi-table">
+        <thead>
+          <tr>
+            <th data-i18n="roi.prog">Programme</th>
+            <th data-i18n="roi.cost">Cost (RM)</th>
+            <th data-i18n="roi.gradVal">Graduate Value (RM)</th>
+            <th>ROI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Welding</td><td>42,000</td><td>89,000</td><td class="roi-positive">+112%</td></tr>
+          <tr><td>ICT / Networking</td><td>38,500</td><td>94,000</td><td class="roi-positive">+144%</td></tr>
+          <tr><td>Auto Mechanics</td><td>55,000</td><td>76,000</td><td class="roi-positive">+38%</td></tr>
+          <tr><td>Engineering Tech</td><td>61,000</td><td>112,000</td><td class="roi-positive">+84%</td></tr>
+          <tr><td>Admin &amp; Office</td><td>22,000</td><td>19,500</td><td class="roi-negative">−11%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       SHARED — Three Cards (both views)
+  ══════════════════════════════════════════ -->
+  <div class="cards">
+
+    <!-- Students -->
+    <div class="card">
+      <div class="card-icon icon-blue">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="card-label" data-i18n="card.students">Students</div>
+      <div class="card-value blue" id="val-students" contenteditable="true" spellcheck="false">348</div>
+      <div class="card-sub" id="sub-students" contenteditable="true" spellcheck="false">↑ 12 enrolled this month</div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="card">
+      <div class="card-icon icon-amber">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 11 12 14 22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <div class="card-label" data-i18n="card.tasks">Tasks</div>
+      <div class="card-value amber" id="val-tasks">24</div>
+      <div class="card-sub" id="sub-tasks">8 completed · 16 pending</div>
+    </div>
+
+    <!-- Workshop Status -->
+    <div class="card">
+      <div class="card-icon icon-green">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <div class="card-label" data-i18n="card.wsStatus">Workshop Status</div>
+      <div class="workshop-count" id="ws-count">4 Active</div>
+      <div class="workshop-list" id="ws-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       OPERATIONS VIEW — Alerts + Checklist
+  ══════════════════════════════════════════ -->
+  <div id="ops-section">
+
+    <!-- Actionable Alerts -->
+    <div class="alerts-panel no-print">
+      <h3><span data-i18n="alerts.title">🚨 Urgent Alerts</span></h3>
+      <div id="alerts-list"></div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title" data-i18n="checklist.title">Task Checklist</span>
+        <span class="badge" id="checklist-badge">0 / 0 done</span>
+      </div>
+      <ul class="checklist" id="checklist"></ul>
+      <div class="add-row no-print">
+        <input id="new-task-text" type="text" placeholder="Add a new task…" data-i18n-ph="checklist.addPh" />
+        <select id="new-task-tag">
+          <option value="eng">Engineering</option>
+          <option value="weld">Welding</option>
+          <option value="it">ICT</option>
+          <option value="auto">Auto Mech</option>
+        </select>
+        <input id="new-task-due" type="text" placeholder="Due date" style="max-width:140px;" />
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#57606a;white-space:nowrap;">
+          <input type="checkbox" id="new-task-urgent" style="width:14px;height:14px;" /> <span data-i18n="checklist.urgent">Urgent</span>
+        </label>
+        <button class="btn-add" id="addTaskBtn" data-i18n="checklist.add">+ Add</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       AI INTELLIGENCE TAB
+  ══════════════════════════════════════════ -->
+  <div class="ai-tab-section" id="ai-section">
+
+    <!-- ── AI FUNCTIONS ── -->
+    <p class="ai-group-title" data-i18n="ait.functions">🧠 AI Functions</p>
+    <div class="ai-grid">
+
+      <!-- F1: Smart Risk Scorer -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-red">⚠️</div>
+          <div class="ai-card-head-text">
+            <h4>Smart Risk Scorer</h4>
+            <p>Score a student's dropout risk in real-time</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Attendance %</label>
+          <input type="number" id="risk-att" value="65" min="0" max="100" />
+          <label>Assignments done</label>
+          <input type="number" id="risk-assign" value="4" min="0" max="10" />
+          <label>Financial aid?</label>
+          <select id="risk-fin"><option value="yes">Yes</option><option value="no">No</option></select>
+        </div>
+        <button class="ai-run-btn" onclick="runRiskScorer()">▶ Analyse Risk</button>
+        <div class="ai-result red-border" id="risk-result"></div>
+      </div>
+
+      <!-- F2: Auto Task Prioritiser -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-amber">📋</div>
+          <div class="ai-card-head-text">
+            <h4>Auto Task Prioritiser</h4>
+            <p>Re-rank your checklist by AI urgency score</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Weight: Deadline</label>
+          <input type="range" id="pri-dead" min="1" max="5" value="3" />
+          <label>Weight: Department</label>
+          <input type="range" id="pri-dept" min="1" max="5" value="2" />
+        </div>
+        <button class="ai-run-btn" onclick="runTaskPrioritiser()">▶ Prioritise Tasks</button>
+        <div class="ai-result amber-border" id="pri-result"></div>
+      </div>
+
+      <!-- F3: Student Dropout Detector -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-purple">🎓</div>
+          <div class="ai-card-head-text">
+            <h4>Dropout Detector</h4>
+            <p>Identify at-risk students across programmes</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Programme</label>
+          <select id="drop-prog">
+            <option>Welding</option><option>ICT</option>
+            <option>Auto Mech</option><option>Engineering</option>
+          </select>
+          <label>Avg Grade (%)</label>
+          <input type="number" id="drop-grade" value="52" min="0" max="100" />
+        </div>
+        <button class="ai-run-btn purple" onclick="runDropoutDetector()">▶ Detect Risk</button>
+        <div class="ai-result purple-border" id="drop-result"></div>
+      </div>
+
+      <!-- F4: Workshop Health Monitor -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-teal">🔧</div>
+          <div class="ai-card-head-text">
+            <h4>Workshop Health Monitor</h4>
+            <p>AI maintenance score for each workshop</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Workshop</label>
+          <select id="ws-sel">
+            <option>Welding</option><option>ICT Lab</option>
+            <option>Auto Mech</option><option>Engineering</option>
+          </select>
+          <label>Days since last service</label>
+          <input type="number" id="ws-days" value="45" min="0" max="365" />
+        </div>
+        <button class="ai-run-btn green" onclick="runWorkshopHealth()">▶ Check Health</button>
+        <div class="ai-result green-border" id="ws-health-result"></div>
+      </div>
+
+    </div><!-- /ai-grid functions -->
+
+    <!-- ── AI GENERATORS ── -->
+    <p class="ai-group-title">⚡ AI Generators</p>
+    <div class="ai-grid">
+
+      <!-- G1: Lesson Plan Generator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-blue">📖</div>
+          <div class="ai-card-head-text">
+            <h4>Lesson Plan Generator</h4>
+            <p>Generate a structured lesson plan instantly</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Topic</label>
+          <input type="text" id="lp-topic" value="Arc Welding Basics" style="flex:1;min-width:120px;" />
+          <label>Duration</label>
+          <select id="lp-dur">
+            <option>60 min</option><option>90 min</option><option>120 min</option>
+          </select>
+        </div>
+        <button class="ai-run-btn" onclick="genLessonPlan()">⚡ Generate</button>
+        <textarea class="ai-output-area" id="lp-output" placeholder="Lesson plan will appear here…" readonly></textarea>
+        <button class="ai-copy-btn" onclick="copyOutput('lp-output')">📋 Copy</button>
+      </div>
+
+      <!-- G2: Progress Report Generator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-green">📊</div>
+          <div class="ai-card-head-text">
+            <h4>Progress Report Generator</h4>
+            <p>Auto-draft a student progress report</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Student Name</label>
+          <input type="text" id="rpt-name" value="Ahmad Rizwan" style="flex:1;min-width:100px;" />
+          <label>Grade (%)</label>
+          <input type="number" id="rpt-grade" value="74" min="0" max="100" />
+        </div>
+        <button class="ai-run-btn green" onclick="genProgressReport()">⚡ Generate</button>
+        <textarea class="ai-output-area" id="rpt-output" placeholder="Report will appear here…" readonly></textarea>
+        <button class="ai-copy-btn" onclick="copyOutput('rpt-output')">📋 Copy</button>
+      </div>
+
+      <!-- G3: KPI Target Generator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-indigo">🎯</div>
+          <div class="ai-card-head-text">
+            <h4>KPI Target Generator</h4>
+            <p>Set smart KPI targets based on current data</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Current Enrolment</label>
+          <input type="number" id="kpi-enrol" value="348" min="0" />
+          <label>Current Employ. %</label>
+          <input type="number" id="kpi-emp" value="87" min="0" max="100" />
+        </div>
+        <button class="ai-run-btn purple" onclick="genKPITargets()">⚡ Generate</button>
+        <textarea class="ai-output-area" id="kpi-output" placeholder="KPI targets will appear here…" readonly></textarea>
+        <button class="ai-copy-btn" onclick="copyOutput('kpi-output')">📋 Copy</button>
+      </div>
+
+      <!-- G4: WhatsApp Broadcast Generator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-lime">📲</div>
+          <div class="ai-card-head-text">
+            <h4>WA Broadcast Generator</h4>
+            <p>Draft a WhatsApp announcement for parents/students</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Type</label>
+          <select id="wa-type">
+            <option>Exam Notice</option><option>Holiday Notice</option>
+            <option>Fee Reminder</option><option>Event Invitation</option>
+          </select>
+          <label>Date</label>
+          <input type="text" id="wa-date" value="15 Jul 2025" style="max-width:110px;" />
+        </div>
+        <button class="ai-run-btn" onclick="genWABroadcast()">⚡ Generate</button>
+        <textarea class="ai-output-area" id="wa-output" placeholder="Message will appear here…" readonly></textarea>
+        <div style="display:flex;gap:6px;">
+          <button class="ai-copy-btn" onclick="copyOutput('wa-output')">📋 Copy</button>
+          <button class="ai-copy-btn" style="background:#25d366;color:#fff;border-color:#25d366;" onclick="sendWABroadcast()">📲 Open WA</button>
+        </div>
+      </div>
+
+    </div><!-- /ai-grid generators -->
+
+    <!-- ── AI SIMULATORS ── -->
+    <p class="ai-group-title">🔬 AI Simulators</p>
+    <div class="ai-grid">
+
+      <!-- S1: Enrollment Forecast Simulator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-sky">📈</div>
+          <div class="ai-card-head-text">
+            <h4>Enrollment Forecast</h4>
+            <p>Simulate student growth over 6 months</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Current students</label>
+          <input type="number" id="ef-base" value="348" min="1" />
+          <label>Monthly growth %</label>
+          <input type="range" id="ef-rate" min="0" max="15" value="4" oninput="document.getElementById('ef-rate-val').textContent=this.value+'%'" />
+          <span id="ef-rate-val" style="font-size:11px;font-weight:700;color:#3b82d4;white-space:nowrap;">4%</span>
+        </div>
+        <button class="ai-run-btn" onclick="simEnrollment()">▶ Simulate</button>
+        <div id="ef-chart-wrap" style="display:none;margin-top:6px;">
+          <div class="sim-chart" id="ef-bars"></div>
+          <div class="sim-labels" id="ef-labels"></div>
+          <div class="ai-result show" id="ef-result" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <!-- S2: Budget Burn Simulator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-orange">💰</div>
+          <div class="ai-card-head-text">
+            <h4>Budget Burn Simulator</h4>
+            <p>Forecast when budget runs out by spend rate</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Budget (RM)</label>
+          <input type="number" id="bb-budget" value="3000000" min="1" style="width:100px;" />
+          <label>Monthly spend (RM)</label>
+          <input type="number" id="bb-spend" value="240000" min="1" style="width:90px;" />
+        </div>
+        <button class="ai-run-btn purple" onclick="simBudget()">▶ Simulate</button>
+        <div id="bb-chart-wrap" style="display:none;margin-top:6px;">
+          <div class="sim-chart" id="bb-bars"></div>
+          <div class="sim-labels" id="bb-labels"></div>
+          <div class="ai-result show purple-border" id="bb-result" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <!-- S3: Workshop Capacity Simulator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-fuchsia">🏭</div>
+          <div class="ai-card-head-text">
+            <h4>Workshop Capacity Simulator</h4>
+            <p>Model student load vs workshop capacity</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Capacity (seats)</label>
+          <input type="number" id="wc-cap" value="40" min="1" />
+          <label>Students enrolled</label>
+          <input type="number" id="wc-enrol" value="34" min="0" />
+          <label>Growth/month</label>
+          <input type="number" id="wc-growth" value="3" min="0" />
+        </div>
+        <button class="ai-run-btn green" onclick="simCapacity()">▶ Simulate</button>
+        <div id="wc-chart-wrap" style="display:none;margin-top:6px;">
+          <div class="sim-chart" id="wc-bars"></div>
+          <div class="sim-labels" id="wc-labels"></div>
+          <div class="ai-result show green-border" id="wc-result" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <!-- S4: Graduate Employment Simulator -->
+      <div class="ai-card">
+        <div class="ai-card-head">
+          <div class="ai-card-icon aic-rose">💼</div>
+          <div class="ai-card-head-text">
+            <h4>Employment Rate Simulator</h4>
+            <p>Project graduate employment under different policies</p>
+          </div>
+        </div>
+        <div class="ai-controls">
+          <label>Base rate (%)</label>
+          <input type="number" id="ge-base" value="87" min="0" max="100" />
+          <label>Industry demand</label>
+          <select id="ge-demand">
+            <option value="high">High</option><option value="med">Medium</option><option value="low">Low</option>
+          </select>
+          <label>LI programme?</label>
+          <select id="ge-li"><option value="yes">Yes</option><option value="no">No</option></select>
+        </div>
+        <button class="ai-run-btn purple" onclick="simEmployment()">▶ Simulate</button>
+        <div id="ge-chart-wrap" style="display:none;margin-top:6px;">
+          <div class="sim-chart" id="ge-bars"></div>
+          <div class="sim-labels" id="ge-labels"></div>
+          <div class="ai-result show purple-border" id="ge-result" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+    </div><!-- /ai-grid simulators -->
+
+  </div><!-- /ai-tab-section -->
+
+  <!-- ═══════════════ PRINT SIGNATURE BOX ═══════════════ -->
+  <div class="print-sig">
+    <p style="font-size:12px;font-weight:700;margin-bottom:4px;">Official Authorisation</p>
+    <p style="font-size:11px;color:#57606a;">This report has been reviewed and approved by the following officers.</p>
+    <div class="sig-row">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-name">Pengarah / Director</div>
+        <div class="sig-name" style="margin-top:2px;">Date: ___________________</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-name">Timbalan Pengarah / Deputy Director</div>
+        <div class="sig-name" style="margin-top:2px;">Date: ___________________</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-name">Pegawai Penyelia / Supervisor</div>
+        <div class="sig-name" style="margin-top:2px;">Date: ___________________</div>
+      </div>
+    </div>
+    <p class="print-footer-note">Generated by TVET Dashboard — Confidential. For internal use only.</p>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ═══════════════ BAR 8: BOTTOM ACTION DOCK ═══════════════ -->
+<div class="bottom-dock no-print" id="bottom-dock">
+  <div class="dock-status">
+    <div class="dock-live-dot"></div>
+    <span id="dock-status-text">Auto-saved</span>
+  </div>
+  <div class="dock-divider"></div>
+  <button class="dock-btn dock-save" id="dockSaveBtn" data-i18n="nav.save">💾 Save</button>
+  <button class="dock-btn dock-pdf"  id="dockPdfBtn"  data-i18n="nav.pdf">🖨️ PDF</button>
+  <div class="dock-divider"></div>
+  <button class="dock-btn dock-reset" id="dockResetBtn" data-i18n="nav.reset">↺ Reset</button>
+</div>
+
+<!-- ═══════════════ QR MODAL ═══════════════ -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('qr-modal')">×</button>
+    <h2>📱 Share Dashboard QR</h2>
+    <p style="font-size:12.5px;color:#57606a;margin-bottom:8px;">Scan with your phone camera to open this dashboard.</p>
+    <div id="qr-canvas"></div>
+    <p id="qr-url"></p>
+    <button class="btn btn-ghost" style="margin-top:16px;width:100%;" onclick="closeModal('qr-modal')">Close</button>
+  </div>
+</div>
+
+<!-- ═══════════════ FAQ CHATBOT ═══════════════ -->
+<button id="chatbot-fab" title="FAQ Assistant" onclick="toggleChat()">💬</button>
+
+<div id="chatbot-window">
+  <div class="chat-header">
+    <span>🎓 TVET FAQ Assistant</span>
+    <button class="chat-header-close" onclick="toggleChat()">×</button>
+  </div>
+  <div class="chat-body" id="chat-body"></div>
+  <div class="chat-suggestions" id="chat-chips"></div>
+  <div class="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Ask a question…" />
+    <button class="chat-send-btn" onclick="chatSend()">➤</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<footer>Made with IBM Bob</footer>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ══════════════════════════════════════════════════════════
+   LANGUAGE / i18n
+══════════════════════════════════════════════════════════ */
+var LANG = "en";
+
+var I18N = {
+  en: {
+    /* navbar */
+    "tab.ops":  "⚙️ Operations",
+    "tab.exec": "🏛️ Executive",
+    "tab.ai":   "🤖 AI Intelligence",
+    "nav.qr":   "📱 QR",
+    "nav.pdf":  "🖨️ PDF",
+    "nav.save": "💾 Save",
+    "nav.reset":"↺ Reset",
+    /* brand */
+    "brand.title": "TVET Dashboard",
+    "brand.sub":   "Technical & Vocational Education and Training",
+    /* view titles */
+    "view.ops":  "Operations View",
+    "view.exec": "Executive / Pengarah View",
+    "view.ai":   "🤖 AI Intelligence",
+    /* cards */
+    "card.students": "Students",
+    "card.tasks":    "Tasks",
+    "card.wsStatus": "Workshop Status",
+    /* kpi */
+    "kpi.enrolRate":    "Enrollment Rate",
+    "kpi.enrolRateSub": "↑ 3.1% vs last quarter",
+    "kpi.gradEmp":      "Graduate Employment",
+    "kpi.gradEmpSub":   "Target: 85% ✓",
+    "kpi.budget":       "Budget Utilisation",
+    "kpi.budgetSub":    "RM 2.16M of RM 3M",
+    /* ai forecast */
+    "ai.badge":      "AI Forecast",
+    "ai.badgeTitle": "Predictive Insights",
+    "ai.f1": "📈 Enrolment projected to reach 410 students by end of Q3 2025 (+18% YoY)",
+    "ai.f2": "⚠️ Auto Mech workshop maintenance cost likely to exceed budget by RM 8,400 if not resolved within 14 days",
+    "ai.f3": "🎓 3 students identified as at-risk of dropping — recommend counsellor intervention this week",
+    "ai.f4": "🔧 ICT Lab equipment replacement recommended within 60 days based on usage patterns",
+    "ai.f5": "📊 Welding programme has highest employer demand score (92/100) — recommend capacity expansion",
+    /* roi */
+    "roi.title":   "ROI Summary — Training Programmes",
+    "roi.prog":    "Programme",
+    "roi.cost":    "Cost (RM)",
+    "roi.gradVal": "Graduate Value (RM)",
+    /* alerts */
+    "alerts.title":   "🚨 Urgent Alerts",
+    "alerts.allClear":"No urgent items. All clear ✓",
+    /* checklist */
+    "checklist.title":  "Task Checklist",
+    "checklist.addPh":  "Add a new task…",
+    "checklist.urgent": "Urgent",
+    "checklist.add":    "+ Add",
+    "checklist.done":   "done",
+    "checklist.completed": "Completed",
+    "checklist.due":    "Due",
+    /* filter bar */
+    "filter.all":     "All",
+    "filter.urgent":  "🔴 Urgent",
+    "filter.pending": "⏳ Pending",
+    "filter.done":    "✅ Done",
+    /* progress bar */
+    "pb.title":       "📋 Task Completion Progress",
+    "pb.completed":   "Completed",
+    "pb.pending":     "Pending",
+    "pb.urgent":      "Urgent",
+    /* dock */
+    "dock.status":    "Auto-saved",
+    /* ai tab section titles */
+    "ait.functions":  "🧠 AI Functions",
+    "ait.generators": "⚡ AI Generators",
+    "ait.simulators": "🔬 AI Simulators",
+  },
+  bm: {
+    /* navbar */
+    "tab.ops":  "⚙️ Operasi",
+    "tab.exec": "🏛️ Eksekutif",
+    "tab.ai":   "🤖 Kecerdasan AI",
+    "nav.qr":   "📱 KR",
+    "nav.pdf":  "🖨️ PDF",
+    "nav.save": "💾 Simpan",
+    "nav.reset":"↺ Tetap Semula",
+    /* brand */
+    "brand.title": "Papan Pemuka TVET",
+    "brand.sub":   "Latihan Teknikal & Vokasional",
+    /* view titles */
+    "view.ops":  "Pandangan Operasi",
+    "view.exec": "Pandangan Eksekutif / Pengarah",
+    "view.ai":   "🤖 Kecerdasan AI",
+    /* cards */
+    "card.students": "Pelajar",
+    "card.tasks":    "Tugasan",
+    "card.wsStatus": "Status Bengkel",
+    /* kpi */
+    "kpi.enrolRate":    "Kadar Enrolmen",
+    "kpi.enrolRateSub": "↑ 3.1% berbanding suku lepas",
+    "kpi.gradEmp":      "Pekerjaan Graduan",
+    "kpi.gradEmpSub":   "Sasaran: 85% ✓",
+    "kpi.budget":       "Penggunaan Belanjawan",
+    "kpi.budgetSub":    "RM 2.16J daripada RM 3J",
+    /* ai forecast */
+    "ai.badge":      "Ramalan AI",
+    "ai.badgeTitle": "Pandangan Ramalan",
+    "ai.f1": "📈 Enrolmen dijangka mencapai 410 pelajar menjelang akhir Q3 2025 (+18% YoY)",
+    "ai.f2": "⚠️ Kos penyelenggaraan bengkel Auto Mech berkemungkinan melebihi belanjawan sebanyak RM 8,400 jika tidak diselesaikan dalam 14 hari",
+    "ai.f3": "🎓 3 pelajar dikenal pasti berisiko berhenti — cadangkan intervensi kaunselor minggu ini",
+    "ai.f4": "🔧 Penggantian peralatan Makmal ICT disyorkan dalam 60 hari berdasarkan corak penggunaan",
+    "ai.f5": "📊 Program Kimpalan mempunyai skor permintaan majikan tertinggi (92/100) — cadangkan pengembangan kapasiti",
+    /* roi */
+    "roi.title":   "Ringkasan ROI — Program Latihan",
+    "roi.prog":    "Program",
+    "roi.cost":    "Kos (RM)",
+    "roi.gradVal": "Nilai Graduan (RM)",
+    /* alerts */
+    "alerts.title":    "🚨 Amaran Segera",
+    "alerts.allClear": "Tiada item segera. Semuanya baik ✓",
+    /* checklist */
+    "checklist.title":     "Senarai Semak Tugasan",
+    "checklist.addPh":     "Tambah tugasan baharu…",
+    "checklist.urgent":    "Mendesak",
+    "checklist.add":       "+ Tambah",
+    "checklist.done":      "selesai",
+    "checklist.completed": "Selesai",
+    "checklist.due":       "Tarikh Akhir",
+    /* filter bar */
+    "filter.all":     "Semua",
+    "filter.urgent":  "🔴 Mendesak",
+    "filter.pending": "⏳ Belum Selesai",
+    "filter.done":    "✅ Selesai",
+    /* progress bar */
+    "pb.title":       "📋 Kemajuan Tugasan",
+    "pb.completed":   "Selesai",
+    "pb.pending":     "Belum Selesai",
+    "pb.urgent":      "Mendesak",
+    /* dock */
+    "dock.status":    "Tersimpan",
+    /* ai tab section titles */
+    "ait.functions":  "🧠 Fungsi AI",
+    "ait.generators": "⚡ Penjana AI",
+    "ait.simulators": "🔬 Simulator AI",
+  }
+};
+
+function t(key) {
+  var dict = I18N[LANG] || I18N["en"];
+  return dict[key] || I18N["en"][key] || key;
+}
+
+function applyLang() {
+  /* text nodes */
+  document.querySelectorAll("[data-i18n]").forEach(function(el) {
+    el.textContent = t(el.getAttribute("data-i18n"));
+  });
+  /* placeholder attributes */
+  document.querySelectorAll("[data-i18n-ph]").forEach(function(el) {
+    el.placeholder = t(el.getAttribute("data-i18n-ph"));
+  });
+  /* toggle active state */
+  document.getElementById("lang-en").classList.toggle("active", LANG === "en");
+  document.getElementById("lang-bm").classList.toggle("active", LANG === "bm");
+  /* update page title to match current view */
+  var activeTab = ["ops","exec","ai"].find(function(v) {
+    return document.getElementById("tab-" + v).classList.contains("active");
+  }) || "ops";
+  var pt = document.getElementById("page-title");
+  if (pt) pt.textContent = t("view." + activeTab);
+  /* update workshop status labels */
+  renderWorkshops();
+  /* update alerts */
+  renderAlerts();
+}
+
+function setLang(lang) {
+  LANG = lang;
+  applyLang();
+}
+
+/* ── Demo data ─────────────────────────────────────────── */
+var DEMO = {
+  students: { value: "348", sub: "↑ 12 enrolled this month" },
+  workshops: [
+    { name: "Welding",     status: "open"  },
+    { name: "ICT Lab",     status: "open"  },
+    { name: "Auto Mech",   status: "maint" },
+    { name: "Engineering", status: "open"  }
+  ],
+  tasks: [
+    { id:1, text:"Distribute welding safety kits",           tag:"weld", due:"2 Jun 2025",  done:true,  urgent:false },
+    { id:2, text:"Update ICT lab attendance register",       tag:"it",   due:"3 Jun 2025",  done:true,  urgent:false },
+    { id:3, text:"Submit Q2 engineering assessment results", tag:"eng",  due:"10 Jun 2025", done:false, urgent:false },
+    { id:4, text:"Schedule auto mechanics practical exam",   tag:"auto", due:"12 Jun 2025", done:false, urgent:true  },
+    { id:5, text:"Order replacement lathe machine parts",    tag:"eng",  due:"15 Jun 2025", done:false, urgent:true  },
+    { id:6, text:"Conduct ICT lab software audit",           tag:"it",   due:"18 Jun 2025", done:false, urgent:false }
+  ]
+};
+
+var STORAGE_KEY = "tvet_dashboard_v1";
+
+function loadState() {
+  try { var r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : deepClone(DEMO); }
+  catch(e) { return deepClone(DEMO); }
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+var TAG_LABELS_EN = { eng:"Engineering", weld:"Welding", it:"ICT", auto:"Auto Mech" };
+var TAG_LABELS_BM = { eng:"Kejuruteraan", weld:"Kimpalan", it:"ICT", auto:"Mek. Auto" };
+function getTagLabels() { return LANG === "bm" ? TAG_LABELS_BM : TAG_LABELS_EN; }
+var TAG_LABELS = TAG_LABELS_EN; // kept for backwards compat — refreshed via getTagLabels()
+function makeTag(t) {
+  var s = document.createElement("span");
+  s.className = "tag tag-" + t;
+  s.textContent = getTagLabels()[t] || t;
+  return s;
+}
+
+var state = loadState();
+var nextId = Math.max.apply(null, [0].concat(state.tasks.map(function(t){return t.id;}))) + 1;
+
+/* ── View switcher ─────────────────────────────────────── */
+function switchView(v) {
+  document.getElementById("exec-section").classList.toggle("active", v === "exec");
+  document.getElementById("ops-section").style.display  = v === "ops" ? "" : "none";
+  document.getElementById("ai-section").classList.toggle("active",   v === "ai");
+  document.getElementById("tab-exec").classList.toggle("active", v === "exec");
+  document.getElementById("tab-ops").classList.toggle("active",  v === "ops");
+  document.getElementById("tab-ai").classList.toggle("active",   v === "ai");
+  /* show filter bar & progress bar only in ops view */
+  var fb = document.getElementById("filter-bar");
+  var pb = document.getElementById("progress-section");
+  if (fb) fb.style.display = v === "ops" ? "" : "none";
+  if (pb) pb.classList.toggle("show", v === "ops" || v === "exec");
+  var pt = document.getElementById("page-title");
+  if (pt) pt.textContent = t("view." + v);
+  var pm = document.getElementById("page-meta");
+  if (pm) pm.textContent = new Date().toLocaleDateString(LANG === "bm" ? "ms-MY" : "en-MY", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
+}
+// default: ops view
+switchView("ops");
+
+/* ── Render workshops ──────────────────────────────────── */
+function renderWorkshops() {
+  var list = document.getElementById("ws-list");
+  list.innerHTML = "";
+  state.workshops.forEach(function(w) {
+    var badge = document.createElement("div");
+    badge.className = "status-badge status-" + w.status;
+    var dot = document.createElement("span");
+    dot.className = "dot dot-" + w.status;
+    var wsLbls = LANG === "bm"
+      ? {open:"Buka",maint:"Selenggara",closed:"Tutup"}
+      : {open:"Open",maint:"Maint.",closed:"Closed"};
+    var lbl = wsLbls[w.status] || w.status;
+    badge.appendChild(dot);
+    badge.appendChild(document.createTextNode(w.name + " — " + lbl));
+    list.appendChild(badge);
+  });
+  var cnt = state.workshops.filter(function(w){return w.status==="open";}).length;
+  document.getElementById("ws-count").textContent = cnt + (LANG === "bm" ? " Aktif" : " Active");
+}
+
+/* ── Render alerts ─────────────────────────────────────── */
+function renderAlerts() {
+  var urgent = state.tasks.filter(function(t){return t.urgent && !t.done;});
+  var panel = document.getElementById("alerts-list");
+  panel.innerHTML = "";
+  if (!urgent.length) {
+    panel.innerHTML = '<p style="font-size:12.5px;color:#57606a;">' + t("alerts.allClear") + '</p>';
+    return;
+  }
+  urgent.forEach(function(task) {
+    var div = document.createElement("div");
+    div.className = "alert-item";
+
+    var txt = document.createElement("div");
+    txt.className = "alert-text";
+    var tl = getTagLabels();
+    txt.innerHTML = "<strong>" + escHtml(task.text) + "</strong><span>" + (tl[task.tag]||task.tag) + " · " + t("checklist.due") + ": " + escHtml(task.due) + "</span>";
+
+    var waBtn = document.createElement("button");
+    waBtn.className = "btn btn-wa";
+    waBtn.textContent = LANG === "bm" ? "📲 Amaran WA" : "📲 WhatsApp Alert";
+    waBtn.addEventListener("click", (function(t){
+      return function() {
+        var msg = "⚠️ TVET URGENT ALERT\n\nTask: " + t.text + "\nDepartment: " + TAG_LABELS[t.tag] + "\nDue: " + t.due + "\n\nPlease action this immediately.";
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+      };
+    })(task));
+
+    div.appendChild(txt);
+    div.appendChild(waBtn);
+    panel.appendChild(div);
+  });
+}
+
+/* ── Render checklist ──────────────────────────────────── */
+function renderChecklist() {
+  var ul = document.getElementById("checklist");
+  ul.innerHTML = "";
+  var filtered = state.tasks.filter(function(task) {
+    if (activeFilter === "urgent")  return task.urgent && !task.done;
+    if (activeFilter === "pending") return !task.done;
+    if (activeFilter === "done")    return task.done;
+    return true;
+  });
+  filtered.forEach(function(task) {
+    var li = document.createElement("li");
+    if (task.urgent && !task.done) li.classList.add("task-urgent");
+
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = task.done;
+    cb.addEventListener("change", function() {
+      task.done = cb.checked;
+      persistAndRefresh();
+    });
+
+    var labelDiv = document.createElement("div");
+    labelDiv.className = "check-label";
+
+    var textSpan = document.createElement("span");
+    textSpan.className = "check-text" + (task.done ? " done" : "");
+    textSpan.setAttribute("contenteditable","true");
+    textSpan.setAttribute("spellcheck","false");
+    textSpan.textContent = task.text;
+    if (task.urgent && !task.done) {
+      var utag = document.createElement("span");
+      utag.className = "tag tag-urgent"; utag.textContent = "Urgent";
+      textSpan.appendChild(utag);
+    }
+    textSpan.appendChild(makeTag(task.tag));
+    textSpan.addEventListener("blur", function() {
+      var raw = textSpan.childNodes[0] ? textSpan.childNodes[0].textContent.trim() : "";
+      if (raw) task.text = raw;
+      persistAndRefresh();
+    });
+    textSpan.addEventListener("keydown", function(e){
+      if(e.key==="Enter"){e.preventDefault();textSpan.blur();}
+    });
+
+    var meta = document.createElement("span");
+    meta.className = "check-meta";
+    meta.textContent = t(task.done ? "checklist.completed" : "checklist.due") + " · " + task.due;
+
+    labelDiv.appendChild(textSpan);
+    labelDiv.appendChild(meta);
+
+    // actions
+    var actions = document.createElement("div");
+    actions.className = "check-actions";
+
+    if (task.urgent && !task.done) {
+      var waBtn = document.createElement("button");
+      waBtn.className = "btn btn-wa";
+      waBtn.textContent = "📲 WA";
+      waBtn.title = "Send WhatsApp alert";
+      waBtn.addEventListener("click", (function(t){
+        return function(){
+          var msg = "⚠️ TVET URGENT ALERT\n\nTask: " + t.text + "\nDepartment: " + TAG_LABELS[t.tag] + "\nDue: " + t.due + "\n\nPlease action this immediately.";
+          window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+        };
+      })(task));
+      actions.appendChild(waBtn);
+    }
+
+    var rm = document.createElement("button");
+    rm.className = "btn-remove"; rm.title = "Remove task"; rm.textContent = "×";
+    rm.addEventListener("click", function(){
+      state.tasks = state.tasks.filter(function(t){return t.id !== task.id;});
+      persistAndRefresh();
+      toast("Task removed.");
+    });
+    actions.appendChild(rm);
+
+    li.appendChild(cb);
+    li.appendChild(labelDiv);
+    li.appendChild(actions);
+    ul.appendChild(li);
+  });
+  updateTaskCard();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+var activeFilter = "all";
+
+function setFilter(f) {
+  activeFilter = f;
+  ["all","urgent","pending","done"].forEach(function(id) {
+    document.getElementById("fpill-" + id).classList.toggle("active", id === f);
+  });
+  renderChecklist();
+}
+
+function updateTaskCard() {
+  var done    = state.tasks.filter(function(t){return t.done;}).length;
+  var total   = state.tasks.length;
+  var pending = total - done;
+  var urgent  = state.tasks.filter(function(t){return t.urgent && !t.done;}).length;
+  document.getElementById("checklist-badge").textContent = done + " / " + total + " " + t("checklist.done");
+  document.getElementById("val-tasks").textContent = total;
+  document.getElementById("sub-tasks").textContent = done + " completed · " + pending + " pending";
+
+  /* filter pill counts */
+  document.getElementById("fc-all").textContent     = total;
+  document.getElementById("fc-urgent").textContent  = urgent;
+  document.getElementById("fc-pending").textContent = pending;
+  document.getElementById("fc-done").textContent    = done;
+
+  /* progress bar (Bar 7) */
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById("pb-fill").style.width = pct + "%";
+  document.getElementById("pb-percent").textContent = pct + "%";
+  document.getElementById("pb-fill").style.background =
+    pct >= 80 ? "linear-gradient(90deg,#059669,#10b981)"
+    : pct >= 40 ? "linear-gradient(90deg,#3b82d4,#7c5cd8)"
+    : "linear-gradient(90deg,#d97706,#dc2626)";
+  document.getElementById("pb-title").textContent = t("pb.title");
+  document.getElementById("pb-done-label").textContent    = done    + " " + t("pb.completed");
+  document.getElementById("pb-pending-label").textContent = pending + " " + t("pb.pending");
+  document.getElementById("pb-urgent-label").textContent  = urgent  + " " + t("pb.urgent");
+
+  /* ticker bar (Bar 6) */
+  var tickerEl = document.getElementById("ticker-bar");
+  if (urgent > 0) {
+    tickerEl.classList.add("has-alerts");
+    var msgs = state.tasks.filter(function(t){return t.urgent && !t.done;}).map(function(t){
+      return "⚠️ " + t.text + " — " + t.due;
+    });
+    document.getElementById("ticker-track").textContent = msgs.join("     ·     ");
+  } else {
+    tickerEl.classList.remove("has-alerts");
+  }
+  document.getElementById("ticker-tasks").textContent = total;
+  document.getElementById("ticker-pending").textContent = pending + (LANG==="bm" ? " belum selesai" : " pending");
+  var sv = parseInt(state.students.value) || 348;
+  document.getElementById("ticker-students").textContent = sv;
+}
+
+function syncStudentsFromDOM() {
+  state.students.value = document.getElementById("val-students").textContent.trim();
+  state.students.sub   = document.getElementById("sub-students").textContent.trim();
+}
+function renderStudents() {
+  document.getElementById("val-students").textContent = state.students.value;
+  document.getElementById("sub-students").textContent = state.students.sub;
+}
+
+function persistAndRefresh() {
+  syncStudentsFromDOM();
+  saveState();
+  renderWorkshops();
+  renderAlerts();
+  renderChecklist();
+  /* dock saved indicator */
+  var ds = document.getElementById("dock-status-text");
+  if (ds) { ds.textContent = t("dock.status") + " ✓"; setTimeout(function(){ ds.textContent = t("dock.status"); }, 2000); }
+}
+
+/* ── Add task ───────────────────────────────────────────── */
+document.getElementById("addTaskBtn").addEventListener("click", function(){
+  var text   = document.getElementById("new-task-text").value.trim();
+  var tag    = document.getElementById("new-task-tag").value;
+  var due    = document.getElementById("new-task-due").value.trim() || "—";
+  var urgent = document.getElementById("new-task-urgent").checked;
+  if (!text) { toast("Please enter a task description."); return; }
+  state.tasks.push({ id: nextId++, text:text, tag:tag, due:due, done:false, urgent:urgent });
+  document.getElementById("new-task-text").value = "";
+  document.getElementById("new-task-due").value  = "";
+  document.getElementById("new-task-urgent").checked = false;
+  persistAndRefresh();
+  toast("Task added and saved.");
+});
+document.getElementById("new-task-text").addEventListener("keydown", function(e){
+  if(e.key==="Enter") document.getElementById("addTaskBtn").click();
+});
+
+/* ── Save / Reset ───────────────────────────────────────── */
+function doSave() { persistAndRefresh(); toast(LANG==="bm" ? "Papan pemuka disimpan ✓" : "Dashboard saved ✓"); }
+function doReset() {
+  if(!confirm(LANG==="bm" ? "Tetap semula kepada data demo asal?" : "Reset all data to the original demo? This cannot be undone.")) return;
+  state = deepClone(DEMO);
+  nextId = Math.max.apply(null,[0].concat(state.tasks.map(function(t){return t.id;})))+1;
+  localStorage.removeItem(STORAGE_KEY);
+  renderStudents(); renderWorkshops(); renderAlerts(); renderChecklist();
+  toast(LANG==="bm" ? "Data demo dipulihkan." : "Demo data restored.");
+}
+function doPDF() {
+  document.getElementById("print-date").textContent =
+    "Generated: " + new Date().toLocaleString("en-MY", {dateStyle:"full",timeStyle:"short"});
+  window.print();
+}
+
+document.getElementById("saveBtn").addEventListener("click", doSave);
+document.getElementById("resetBtn").addEventListener("click", doReset);
+/* dock buttons */
+document.getElementById("dockSaveBtn").addEventListener("click",  doSave);
+document.getElementById("dockPdfBtn").addEventListener("click",   doPDF);
+document.getElementById("dockResetBtn").addEventListener("click", doReset);
+document.getElementById("val-students").addEventListener("blur", persistAndRefresh);
+document.getElementById("sub-students").addEventListener("blur", persistAndRefresh);
+
+/* ── PDF / Print ────────────────────────────────────────── */
+document.getElementById("pdfBtn").addEventListener("click", doPDF);
+
+/* ── QR Modal ───────────────────────────────────────────── */
+document.getElementById("qrBtn").addEventListener("click", function(){
+  var url = window.location.href;
+  document.getElementById("qr-url").textContent = url;
+  var canvas = document.getElementById("qr-canvas");
+  canvas.innerHTML = "";
+  try {
+    new QRCode(canvas, { text: url, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+  } catch(e) {
+    canvas.textContent = "QR library not available. URL: " + url;
+  }
+  openModal("qr-modal");
+});
+
+function openModal(id)  { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+document.getElementById("qr-modal").addEventListener("click", function(e){
+  if(e.target===this) closeModal("qr-modal");
+});
+
+/* ── Toast ──────────────────────────────────────────────── */
+var toastTimer;
+function toast(msg) {
+  var el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2600);
+}
+
+/* ══════════════════════════════════════════════════════════
+   FAQ CHATBOT  — 30 Q&As
+══════════════════════════════════════════════════════════ */
+var FAQ = [
+  { q:"What is TVET?", a:"TVET stands for Technical and Vocational Education and Training. It provides skills-based qualifications for technical careers in engineering, ICT, welding, auto mechanics, and more." },
+  { q:"How do I enrol?", a:"Students can enrol via the official TVET portal or visit the admissions office. Bring your academic certificates, MyKad, and passport-sized photos." },
+  { q:"What programmes are available?", a:"We offer Welding Technology, ICT Networking, Automotive Mechanics, Engineering Technology, and Office Administration." },
+  { q:"What are the entry requirements?", a:"Minimum SPM with at least 3 credits including Bahasa Melayu and Mathematics. Some programmes require additional science or technical subjects." },
+  { q:"How long are the programmes?", a:"Certificate programmes are typically 1–2 years. Diploma programmes are 2–3 years depending on the field of study." },
+  { q:"Is there financial assistance?", a:"Yes. PTPK loans, JPA scholarships, and PERKESO SKIM are available. Visit the finance office or check the official portal for eligibility." },
+  { q:"What are the workshop operating hours?", a:"Workshops operate Monday–Friday, 8:00 AM – 5:00 PM. Saturday sessions may be scheduled for catch-up classes with prior approval." },
+  { q:"How do I report a workshop safety issue?", a:"Report immediately to your supervising lecturer or the Workshop Safety Officer. An incident report form is available at the admin counter." },
+  { q:"How are assessments conducted?", a:"Assessments include theory exams, practical evaluations, coursework, and industry attachments. Each programme has its own weighting scheme." },
+  { q:"What is the minimum attendance requirement?", a:"Students must maintain at least 80% attendance per semester. Falling below this threshold may result in barring from final assessments." },
+  { q:"How can I view my results?", a:"Results are published on the student portal within 2 weeks of the assessment period. Contact the Examination Unit for queries." },
+  { q:"Is there a dress code?", a:"Yes. Students must wear the official uniform during classes. Workshop sessions require safety boots, overalls, and PPE provided by the institution." },
+  { q:"Does TVET offer industry attachments?", a:"Yes. All programmes include a mandatory industrial training (LI) component ranging from 3–6 months with industry partners." },
+  { q:"How do I apply for industrial training?", a:"Submit your LI application form through your programme coordinator at least 8 weeks before the training period starts." },
+  { q:"What certifications are awarded?", a:"We award SKM Level 1–3 (Sijil Kemahiran Malaysia) and Diploma Kemahiran Malaysia (DKM) certified by JPK Malaysia." },
+  { q:"Is JPK certification recognised?", a:"Yes. JPK (Jabatan Pembangunan Kemahiran) certifications are nationally recognised and accepted by most Malaysian employers and industries." },
+  { q:"Can I transfer programmes?", a:"Programme transfers are allowed at the end of Semester 1, subject to vacancy and academic eligibility. Apply through the Admissions Office." },
+  { q:"What support services are available?", a:"We offer counselling, a library, computer labs, sports facilities, a cafeteria, and a student welfare unit for financial or personal assistance." },
+  { q:"How do I contact a lecturer?", a:"Lecturer contact details are on the staff directory on the student portal. You may also approach them directly during their consultation hours." },
+  { q:"What is the graduation ceremony process?", a:"Graduates must clear all academic, financial, and library obligations before applying for the graduation ceremony through the Academic Registry." },
+  { q:"Are there hostel facilities?", a:"Yes. On-campus hostels are available. Apply through the Student Affairs office. Priority is given to students from outside the district." },
+  { q:"What sports facilities are available?", a:"We have a football field, badminton courts, a gymnasium, and a multipurpose hall available for student use outside class hours." },
+  { q:"How do I appeal an assessment result?", a:"Submit a formal appeal to the Examination Unit within 14 days of result publication. A fee may apply. Appeals are reviewed by the Academic Board." },
+  { q:"What is the school calendar?", a:"The academic year runs January–June (Semester 1) and July–December (Semester 2). Holiday breaks follow the national academic calendar." },
+  { q:"Who is the Pengarah (Director)?", a:"The Pengarah oversees all academic, administrative, and operational matters. Appointments can be made through the Director's Office." },
+  { q:"How do I flag an urgent task?", a:"In the Operations View, tick the 'Urgent' checkbox when adding a task. Urgent tasks appear in the Alerts panel with a WhatsApp notification button." },
+  { q:"How do I export an official report?", a:"Click the 🖨️ Export PDF button in the top toolbar. A print-ready layout with official headers and a signature box will be prepared." },
+  { q:"How do I share the dashboard?", a:"Click 📱 Share QR in the toolbar to generate a QR code. Others can scan it with their phone camera to open the dashboard directly." },
+  { q:"How is data saved?", a:"All your changes are saved automatically to your browser's localStorage. Click 💾 Save to force-save, or use ↺ Reset Demo Data to restore defaults." },
+  { q:"What does the Executive View show?", a:"The Executive / Pengarah View shows high-level KPIs, AI-powered forecasts, and a full ROI summary for each training programme — ideal for decision-makers." }
+];
+
+var CHIPS_SAMPLE = [0,5,10,15,20,25,26,27,28,29];
+
+function toggleChat() {
+  var w = document.getElementById("chatbot-window");
+  if (w.classList.contains("open")) {
+    w.classList.remove("open");
+  } else {
+    w.classList.add("open");
+    if (!document.getElementById("chat-body").children.length) initChat();
+    document.getElementById("chat-input").focus();
+  }
+}
+
+function initChat() {
+  addChatMsg("bot", "👋 Hi! I'm your TVET FAQ Assistant. I have answers to 30 common questions. Ask me anything or pick a topic below.");
+  renderChips();
+}
+
+function addChatMsg(who, text) {
+  var body = document.getElementById("chat-body");
+  var div = document.createElement("div");
+  div.className = "chat-msg " + who;
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function renderChips() {
+  var row = document.getElementById("chat-chips");
+  row.innerHTML = "";
+  CHIPS_SAMPLE.forEach(function(i) {
+    var btn = document.createElement("button");
+    btn.className = "chat-chip";
+    btn.textContent = FAQ[i].q;
+    btn.addEventListener("click", function() { answerFAQ(i); });
+    row.appendChild(btn);
+  });
+}
+
+function answerFAQ(i) {
+  addChatMsg("user", FAQ[i].q);
+  setTimeout(function(){ addChatMsg("bot", FAQ[i].a); }, 180);
+  document.getElementById("chat-chips").innerHTML = "";
+}
+
+function findAnswer(query) {
+  var q = query.toLowerCase();
+  var best = -1, bestScore = 0;
+  FAQ.forEach(function(item, i) {
+    var words = item.q.toLowerCase().split(/\W+/);
+    var score = 0;
+    words.forEach(function(w){ if(w.length > 2 && q.indexOf(w) > -1) score++; });
+    // also check answer keywords
+    var awords = item.a.toLowerCase().split(/\W+/);
+    awords.forEach(function(w){ if(w.length > 3 && q.indexOf(w) > -1) score += 0.5; });
+    if(score > bestScore){ bestScore = score; best = i; }
+  });
+  return best;
+}
+
+function chatSend() {
+  var input = document.getElementById("chat-input");
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  addChatMsg("user", text);
+  document.getElementById("chat-chips").innerHTML = "";
+  setTimeout(function(){
+    var idx = findAnswer(text);
+    if(idx >= 0 && idx < FAQ.length) {
+      addChatMsg("bot", FAQ[idx].a);
+    } else {
+      addChatMsg("bot", "I'm not sure about that. Try asking about enrolment, programmes, workshops, results, financial aid, or the dashboard features.");
+    }
+    // show a few suggestion chips
+    var row = document.getElementById("chat-chips");
+    var suggestions = FAQ.map(function(_,i){return i;}).filter(function(i){return i !== idx;}).slice(0,5);
+    suggestions.forEach(function(i){
+      var btn = document.createElement("button");
+      btn.className = "chat-chip";
+      btn.textContent = FAQ[i].q;
+      btn.addEventListener("click", function(){answerFAQ(i);});
+      row.appendChild(btn);
+    });
+  }, 200);
+}
+
+document.getElementById("chat-input").addEventListener("keydown", function(e){
+  if(e.key==="Enter") chatSend();
+});
+
+/* ══════════════════════════════════════════════════════════
+   AI INTELLIGENCE — Functions, Generators, Simulators
+══════════════════════════════════════════════════════════ */
+
+/* ── helper: typewriter effect ── */
+function typeWrite(el, text, delay) {
+  el.textContent = "";
+  el.classList.add("show");
+  var i = 0;
+  var t = setInterval(function() {
+    el.textContent += text[i];
+    i++;
+    if (i >= text.length) clearInterval(t);
+  }, delay || 12);
+}
+
+/* ── F1: Smart Risk Scorer ────────────────────────────── */
+function runRiskScorer() {
+  var att    = parseInt(document.getElementById("risk-att").value) || 0;
+  var assign = parseInt(document.getElementById("risk-assign").value) || 0;
+  var fin    = document.getElementById("risk-fin").value;
+  var score  = 0;
+  if (att < 60)  score += 40;
+  else if (att < 75) score += 20;
+  else if (att < 85) score += 10;
+  if (assign < 4) score += 30;
+  else if (assign < 7) score += 15;
+  if (fin === "no") score += 20;
+  score = Math.min(score, 100);
+  var level = score >= 60 ? "🔴 HIGH RISK" : score >= 30 ? "🟡 MEDIUM RISK" : "🟢 LOW RISK";
+  var advice = score >= 60
+    ? "Immediate counsellor intervention recommended. Notify parents and programme head."
+    : score >= 30
+    ? "Monitor closely. Schedule a welfare check within this week."
+    : "Student is on track. Continue regular monitoring.";
+  var el = document.getElementById("risk-result");
+  el.innerHTML = "<strong>" + level + " — " + score + "/100</strong><br>" +
+    "<div class='risk-meter'><span style='font-size:11px;width:36px;flex-shrink:0;'>Risk</span><div class='risk-bar-wrap'><div class='risk-bar-fill' style='width:" + score + "%;background:" + (score>=60?"#dc2626":score>=30?"#d97706":"#059669") + "'></div></div></div>" +
+    "<span style='font-size:11.5px;'>" + advice + "</span>";
+  el.classList.add("show");
+}
+
+/* ── F2: Auto Task Prioritiser ───────────────────────── */
+function runTaskPrioritiser() {
+  var deadW = parseInt(document.getElementById("pri-dead").value);
+  var deptW = parseInt(document.getElementById("pri-dept").value);
+  var DEPT_SCORE = { auto:5, eng:4, weld:3, it:2 };
+  var scored = state.tasks.filter(function(t){ return !t.done; }).map(function(t, i) {
+    var dScore = DEPT_SCORE[t.tag] || 1;
+    var daysLeft = 30 - i * 3; // simulate days remaining
+    var deadScore = daysLeft < 5 ? 5 : daysLeft < 10 ? 4 : daysLeft < 20 ? 2 : 1;
+    return { text: t.text, tag: t.tag, score: dScore * deptW + deadScore * deadW };
+  });
+  scored.sort(function(a,b){ return b.score - a.score; });
+  var lines = scored.map(function(s, i) {
+    return (i+1) + ". [" + s.tag.toUpperCase() + "] " + s.text + " (score: " + s.score + ")";
+  }).join("\n");
+  var el = document.getElementById("pri-result");
+  typeWrite(el, lines.length ? "📋 Prioritised Order:\n" + lines : "No pending tasks to prioritise.");
+}
+
+/* ── F3: Dropout Detector ────────────────────────────── */
+function runDropoutDetector() {
+  var prog  = document.getElementById("drop-prog").value;
+  var grade = parseInt(document.getElementById("drop-grade").value) || 0;
+  var risk, students, advice;
+  if (grade < 45) {
+    risk = "🔴 Critical"; students = Math.floor(Math.random() * 4) + 3;
+    advice = "Trigger immediate academic intervention plan for " + students + " students.";
+  } else if (grade < 60) {
+    risk = "🟡 Moderate"; students = Math.floor(Math.random() * 3) + 1;
+    advice = students + " students require mentoring and supplementary classes.";
+  } else {
+    risk = "🟢 Stable"; students = 0;
+    advice = "Programme performance is within acceptable range.";
+  }
+  var el = document.getElementById("drop-result");
+  typeWrite(el, prog + " Programme\nRisk Level: " + risk + "\nAt-risk students: " + students + "\n\n" + advice);
+}
+
+/* ── F4: Workshop Health Monitor ─────────────────────── */
+function runWorkshopHealth() {
+  var ws   = document.getElementById("ws-sel").value;
+  var days = parseInt(document.getElementById("ws-days").value) || 0;
+  var score, status, action;
+  if (days > 90) {
+    score = Math.max(20, 100 - days); status = "⚠️ Needs Maintenance";
+    action = "Schedule full service immediately. Risk of equipment failure is HIGH.";
+  } else if (days > 45) {
+    score = 100 - days / 2; status = "🟡 Fair Condition";
+    action = "Book a preventive maintenance check within 2 weeks.";
+  } else {
+    score = 95; status = "✅ Good Condition";
+    action = "No immediate action needed. Next service due in " + (90 - days) + " days.";
+  }
+  score = Math.max(5, Math.min(100, Math.round(score)));
+  var el = document.getElementById("ws-health-result");
+  el.innerHTML = "<strong>" + ws + " — " + status + "</strong><br>" +
+    "<div class='risk-meter'><span style='font-size:11px;width:50px;flex-shrink:0;'>Health</span><div class='risk-bar-wrap'><div class='risk-bar-fill' style='width:" + score + "%;background:" + (score<40?"#dc2626":score<70?"#d97706":"#059669") + "'></div></div><span style='font-size:11px;'>" + score + "%</span></div>" +
+    "<span style='font-size:11.5px;'>" + action + "</span>";
+  el.classList.add("show");
+}
+
+/* ── G1: Lesson Plan Generator ───────────────────────── */
+function genLessonPlan() {
+  var topic = document.getElementById("lp-topic").value.trim() || "Workshop Safety";
+  var dur   = document.getElementById("lp-dur").value;
+  var plan = "📖 LESSON PLAN\nTopic: " + topic + "\nDuration: " + dur + "\n\n" +
+    "🎯 LEARNING OBJECTIVES\n" +
+    "1. Understand the fundamentals of " + topic + "\n" +
+    "2. Apply safety procedures relevant to " + topic + "\n" +
+    "3. Demonstrate practical competency in a supervised setting\n\n" +
+    "🕐 LESSON OUTLINE\n" +
+    "0:00–0:10  Introduction & safety briefing\n" +
+    "0:10–0:25  Theory: Core concepts of " + topic + "\n" +
+    "0:25–0:45  Demonstration by lecturer\n" +
+    "0:45–" + dur.replace(" min","0:") + "  Hands-on practice & Q&A\n\n" +
+    "📊 ASSESSMENT\nPractical demonstration + short written quiz\n\n" +
+    "📦 MATERIALS\nPPE, tools, workstation, reference manual\n\n" +
+    "Generated by TVET AI — " + new Date().toLocaleDateString("en-MY");
+  document.getElementById("lp-output").value = plan;
+}
+
+/* ── G2: Progress Report Generator ──────────────────── */
+function genProgressReport() {
+  var name  = document.getElementById("rpt-name").value.trim() || "Student";
+  var grade = parseInt(document.getElementById("rpt-grade").value) || 0;
+  var perf  = grade >= 80 ? "Excellent" : grade >= 65 ? "Satisfactory" : grade >= 50 ? "Needs Improvement" : "At Risk";
+  var remark = grade >= 80
+    ? "demonstrates outstanding commitment and technical skill. Recommended for industry attachment early placement."
+    : grade >= 65
+    ? "shows consistent progress. Encouraged to revise practical skills and participate in workshop sessions."
+    : grade >= 50
+    ? "requires additional support. Counsellor follow-up and supplementary classes are recommended."
+    : "is at serious academic risk. Immediate intervention by the programme head and welfare officer is required.";
+  var rpt = "📊 STUDENT PROGRESS REPORT\nDate: " + new Date().toLocaleDateString("en-MY") + "\n\n" +
+    "Student: " + name + "\nCurrent Grade: " + grade + "%\nPerformance Level: " + perf + "\n\n" +
+    "REMARKS\n" + name + " " + remark + "\n\n" +
+    "RECOMMENDED ACTIONS\n" +
+    (grade < 65 ? "• Schedule counselling session\n• Enrol in supplementary class\n• Notify parent/guardian\n" : "• Continue current learning plan\n• Consider advanced module placement\n") +
+    "\nPrepared by: TVET AI System\nFor official use — subject to lecturer review.";
+  document.getElementById("rpt-output").value = rpt;
+}
+
+/* ── G3: KPI Target Generator ────────────────────────── */
+function genKPITargets() {
+  var enrol = parseInt(document.getElementById("kpi-enrol").value) || 300;
+  var emp   = parseInt(document.getElementById("kpi-emp").value)   || 80;
+  var out = "🎯 AI-GENERATED KPI TARGETS — Q3/Q4 2025\n\n" +
+    "📌 Enrolment\n  Current: " + enrol + " students\n  Target Q3: " + Math.round(enrol * 1.08) + " (+8%)\n  Target Q4: " + Math.round(enrol * 1.15) + " (+15%)\n\n" +
+    "📌 Graduate Employment Rate\n  Current: " + emp + "%\n  Target Q3: " + Math.min(100, emp + 3) + "%\n  Target Q4: " + Math.min(100, emp + 6) + "%\n\n" +
+    "📌 Workshop Utilisation\n  Target: ≥ 85% seat occupancy\n\n" +
+    "📌 Task Completion Rate\n  Target: ≥ 90% tasks cleared by due date\n\n" +
+    "📌 Student Satisfaction Score\n  Target: ≥ 4.2 / 5.0\n\n" +
+    "Generated: " + new Date().toLocaleString("en-MY");
+  document.getElementById("kpi-output").value = out;
+}
+
+/* ── G4: WhatsApp Broadcast Generator ────────────────── */
+function genWABroadcast() {
+  var type = document.getElementById("wa-type").value;
+  var date = document.getElementById("wa-date").value.trim() || "TBA";
+  var msgs = {
+    "Exam Notice":      "📢 *TVET EXAMINATION NOTICE*\n\nDear Students & Parents,\n\nPlease be informed that the upcoming examination is scheduled on *" + date + "*.\n\nKindly ensure all coursework submissions are completed *3 days before* the exam date.\n\n📍 Venue: Main Examination Hall\n🕗 Time: 8:00 AM sharp\n\nBring your student ID and required stationery.\n\nThank you.\n*TVET Administration*",
+    "Holiday Notice":   "🎉 *TVET HOLIDAY NOTICE*\n\nDear All,\n\nPlease be informed that classes will be *CLOSED* on *" + date + "* in conjunction with a public holiday.\n\nClasses will resume the following working day.\n\nEnjoy your break and stay safe! 🌟\n\n*TVET Administration*",
+    "Fee Reminder":     "💳 *TVET FEE PAYMENT REMINDER*\n\nDear Students,\n\nThis is a friendly reminder that the semester fee payment deadline is *" + date + "*.\n\nPayment methods: Online portal, Bank transfer, Finance Office counter.\n\n⚠️ Late payment may result in suspension of access to facilities.\n\nFor enquiries: finance@tvet.edu.my\n\n*TVET Finance Unit*",
+    "Event Invitation": "🎓 *TVET INVITATION*\n\nDear Students, Parents & Staff,\n\nYou are cordially invited to our upcoming event on *" + date + "*.\n\n📍 Venue: TVET Multipurpose Hall\n🕙 Time: 10:00 AM\n\nLight refreshments will be served. Smart attire required.\n\nKindly RSVP to your programme coordinator.\n\n*TVET Events Committee*"
+  };
+  document.getElementById("wa-output").value = msgs[type] || "";
+}
+
+function sendWABroadcast() {
+  var msg = document.getElementById("wa-output").value.trim();
+  if (!msg) { genWABroadcast(); msg = document.getElementById("wa-output").value; }
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+}
+
+/* ── Copy helper ─────────────────────────────────────── */
+function copyOutput(id) {
+  var el = document.getElementById(id);
+  var text = el.value || el.textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function(){ toast("Copied to clipboard ✓"); });
+  } else {
+    el.select && el.select();
+    document.execCommand("copy");
+    toast("Copied ✓");
+  }
+}
+
+/* ── S1: Enrollment Forecast Simulator ───────────────── */
+function simEnrollment() {
+  var base = parseInt(document.getElementById("ef-base").value) || 300;
+  var rate = parseFloat(document.getElementById("ef-rate").value) / 100;
+  var months = ["M1","M2","M3","M4","M5","M6"];
+  var vals = [base];
+  for (var i = 1; i < 6; i++) vals.push(Math.round(vals[i-1] * (1 + rate)));
+  renderSimChart("ef-bars","ef-labels", months.map(function(_,i){return "M"+(i+1);}), vals, "#3b82d4");
+  var max = vals[vals.length-1];
+  document.getElementById("ef-result").textContent =
+    "📈 Projected enrolment after 6 months: " + max + " students (" + (rate*100).toFixed(0) + "% monthly growth). Total new students: +" + (max - base) + ".";
+  document.getElementById("ef-chart-wrap").style.display = "";
+}
+
+/* ── S2: Budget Burn Simulator ───────────────────────── */
+function simBudget() {
+  var budget = parseInt(document.getElementById("bb-budget").value) || 3000000;
+  var spend  = parseInt(document.getElementById("bb-spend").value)  || 240000;
+  var months = 6;
+  var vals = [], rem = budget;
+  for (var i = 0; i < months; i++) { rem = Math.max(0, rem - spend); vals.push(rem); }
+  var burnMonth = Math.ceil(budget / spend);
+  renderSimChart("bb-bars","bb-labels", ["M1","M2","M3","M4","M5","M6"], vals, "#7c5cd8");
+  document.getElementById("bb-result").textContent =
+    "💰 At RM" + spend.toLocaleString() + "/mo spend, budget depletes in ~" + burnMonth + " months. " +
+    (burnMonth <= 6 ? "⚠️ Budget exhausted within simulation window!" : "✅ Budget holds for simulation period. Remaining after 6 months: RM" + vals[5].toLocaleString());
+  document.getElementById("bb-chart-wrap").style.display = "";
+}
+
+/* ── S3: Workshop Capacity Simulator ─────────────────── */
+function simCapacity() {
+  var cap    = parseInt(document.getElementById("wc-cap").value)    || 40;
+  var enrol  = parseInt(document.getElementById("wc-enrol").value)  || 30;
+  var growth = parseInt(document.getElementById("wc-growth").value) || 2;
+  var vals = [], months = 6;
+  for (var i = 0; i < months; i++) { vals.push(Math.min(enrol + i * growth, cap + 5)); }
+  var overMonth = -1;
+  vals.forEach(function(v,i){ if(v > cap && overMonth < 0) overMonth = i + 1; });
+  var colors = vals.map(function(v){ return v > cap ? "#dc2626" : v / cap > 0.85 ? "#d97706" : "#059669"; });
+  renderSimChartMultiColor("wc-bars","wc-labels",["M1","M2","M3","M4","M5","M6"], vals, colors);
+  document.getElementById("wc-result").textContent =
+    overMonth > 0
+    ? "⚠️ Workshop exceeds capacity of " + cap + " seats in Month " + overMonth + ". Plan expansion or intake control."
+    : "✅ Workshop stays within capacity for the full 6-month period. Max occupancy: " + vals[vals.length-1] + "/" + cap + ".";
+  document.getElementById("wc-chart-wrap").style.display = "";
+}
+
+/* ── S4: Graduate Employment Simulator ───────────────── */
+function simEmployment() {
+  var base   = parseInt(document.getElementById("ge-base").value) || 80;
+  var demand = document.getElementById("ge-demand").value;
+  var li     = document.getElementById("ge-li").value;
+  var boost  = (demand === "high" ? 5 : demand === "med" ? 2 : -3) + (li === "yes" ? 4 : -2);
+  var months = ["Q1","Q2","Q3","Q4","Q5","Q6"];
+  var vals = [base];
+  for (var i = 1; i < 6; i++) {
+    var next = vals[i-1] + (boost * 0.4) + (Math.random() * 2 - 1);
+    vals.push(Math.max(50, Math.min(100, Math.round(next * 10) / 10)));
+  }
+  renderSimChart("ge-bars","ge-labels", months, vals, "#7c5cd8");
+  document.getElementById("ge-result").textContent =
+    "💼 Projected employment rate in Q6: " + vals[5] + "%. " +
+    (vals[5] >= 90 ? "🌟 Exceeds national benchmark (85%)." : vals[5] >= 85 ? "✅ Meets national benchmark." : "⚠️ Below national benchmark. Review LI programme and industry partnerships.");
+  document.getElementById("ge-chart-wrap").style.display = "";
+}
+
+/* ── Chart helper ────────────────────────────────────── */
+function renderSimChart(barsId, labelsId, labels, vals, color) {
+  var max = Math.max.apply(null, vals) || 1;
+  var barsEl = document.getElementById(barsId);
+  var labsEl = document.getElementById(labelsId);
+  barsEl.innerHTML = ""; labsEl.innerHTML = "";
+  vals.forEach(function(v, i) {
+    var bar = document.createElement("div");
+    bar.className = "sim-bar";
+    bar.style.background = color;
+    bar.style.height = Math.round((v / max) * 56) + "px";
+    bar.setAttribute("data-val", v);
+    barsEl.appendChild(bar);
+    var lbl = document.createElement("div");
+    lbl.className = "sim-label";
+    lbl.textContent = labels[i];
+    labsEl.appendChild(lbl);
+  });
+}
+
+function renderSimChartMultiColor(barsId, labelsId, labels, vals, colors) {
+  var max = Math.max.apply(null, vals) || 1;
+  var barsEl = document.getElementById(barsId);
+  var labsEl = document.getElementById(labelsId);
+  barsEl.innerHTML = ""; labsEl.innerHTML = "";
+  vals.forEach(function(v, i) {
+    var bar = document.createElement("div");
+    bar.className = "sim-bar";
+    bar.style.background = colors[i];
+    bar.style.height = Math.round((v / max) * 56) + "px";
+    bar.setAttribute("data-val", v);
+    barsEl.appendChild(bar);
+    var lbl = document.createElement("div");
+    lbl.className = "sim-label";
+    lbl.textContent = labels[i];
+    labsEl.appendChild(lbl);
+  });
+}
+
+/* ── Boot ───────────────────────────────────────────────── */
+document.getElementById("print-date").textContent =
+  "Generated: " + new Date().toLocaleString("en-MY",{dateStyle:"full",timeStyle:"short"});
+renderStudents();
+renderWorkshops();
+renderAlerts();
+renderChecklist();
+applyLang(); // apply EN strings on first load
+</script>
+</body>
+</html>
